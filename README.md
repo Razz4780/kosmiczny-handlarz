@@ -1,2 +1,2 @@
-# kosmiczny-handlarz
-Projekt studencki - gra single player w Node.js
+# Space Trader
+Student project - single player game with Node.js.
