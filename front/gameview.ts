@@ -157,14 +157,18 @@ function createTradeSection(ship: Ship): HTMLElement {
         buyButton.addEventListener("click", () => buyItem(ship, item));
         buyButton.disabled =
             cargoFull || item.getCount() === 0 || item.priceBuy > credits;
-        row.appendChild(buyButton);
+        let tdWrapper = document.createElement("td");
+        tdWrapper.appendChild(buyButton);
+        row.appendChild(tdWrapper);
         const sellButton = document.createElement("button");
         sellButton.id = item.name + "-sell";
         sellButton.innerText = "-";
         sellButton.addEventListener("click", () => sellItem(ship, item));
         const itemOnShip = ship.getItems().find(i => i.name === item.name);
         sellButton.disabled = itemOnShip === undefined;
-        row.appendChild(sellButton);
+        tdWrapper = document.createElement("td");
+        tdWrapper.appendChild(sellButton);
+        row.appendChild(tdWrapper);
     });
     return section;
 }
