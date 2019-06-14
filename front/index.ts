@@ -1,9 +1,20 @@
+/*
+ * index.html script
+ */
+
 import {checkAuth, getGames, getTopScores, login, register, uploadGame} from "./api.js";
 import {addListener, closeModal, getElement, setModalChild, setModalHtml} from "./common.js";
 
+/**
+ * Replaces contents of authentication section, which normally contains login and registration forms.
+ * @param username - logged in user username
+ * @param token    - JWT token received from API
+ */
 function loggedIn(username: string, token: string) {
     const section = getElement("auth-section");
+    // Greeting.
     section.innerHTML = `<p>Hello ${username}!</p>`;
+    // Logout button.
     const logoutButton = document.createElement("button");
     logoutButton.innerText = "Logout";
     logoutButton.addEventListener("click", () => {
@@ -11,6 +22,7 @@ function loggedIn(username: string, token: string) {
         window.location.reload();
     });
     section.appendChild(logoutButton);
+    // Game upload form.
     const newGameForm = document.createElement("form");
     const gameNameInput = document.createElement("input");
     gameNameInput.type = "text";
@@ -57,6 +69,7 @@ function openGameModal() {
                 setModalHtml("<p>No games available</p>");
                 return;
             }
+            // Start game form.
             const startGameForm = document.createElement("form");
             const nickInput = document.createElement("input");
             nickInput.type = "text";
@@ -81,6 +94,8 @@ function openGameModal() {
             startGameForm.appendChild(submitButton);
             startGameForm.action = "./game.html";
             startGameForm.addEventListener("submit", () => {
+                // Game uuid and chosen nick are preserved in localStorage.
+                // Event propagation is not stopped.
                 localStorage.setItem("gameId", gameSelect.value);
                 localStorage.setItem("nick", nickInput.value);
             });
@@ -111,6 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (data === undefined) {
                     alert("Invalid username or password.");
                 } else {
+                    // JWT token is preserved in localStorage.
                     localStorage.setItem("token", data.token);
                     loggedIn(data.username, data.token);
                 }
@@ -142,15 +158,14 @@ document.addEventListener("DOMContentLoaded", () => {
     addListener("modal-exit", "click", false, closeModal);
     const token = localStorage.getItem("token");
     if (token !== null) {
+        // If localStorage contained auth token, we have to check if it's valid.
         checkAuth(token).then(username => {
             if (username !== undefined) {
                 loggedIn(username, token);
             } else {
                 localStorage.removeItem("token");
             }
-        }).catch(err => {
-            alert(err);
-        })
+        }).catch(alert);
     }
     fetchTopScores();
 });

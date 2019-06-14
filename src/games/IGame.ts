@@ -1,3 +1,6 @@
+/**
+ * Every valid game state fulfills this interface.
+ */
 export interface IGame {
     initial_credits: number,
     game_duration: number,

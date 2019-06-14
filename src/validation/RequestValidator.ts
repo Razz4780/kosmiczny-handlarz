@@ -1,6 +1,9 @@
 import {RequestHandler} from "express";
 import {validate} from "jsonschema";
 
+/**
+ * This class is used to create middleware validating request JSON body against given schema.
+ */
 export class RequestValidator {
     private readonly schema: object;
 

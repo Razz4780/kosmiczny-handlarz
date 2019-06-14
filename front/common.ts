@@ -1,3 +1,7 @@
+/*
+ * Some common functions used in DOM manipulation.
+ */
+
 export function addListener(id: string, event: string, prevent: boolean, callback: () => void) {
     const domElement = document.getElementById(id);
     if (domElement !== null) {

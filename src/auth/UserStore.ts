@@ -1,6 +1,9 @@
 import {Request} from "express";
 import {User} from "./User";
 
+/**
+ * Instances of this class are meant to be used as a global mapping request -> user.
+ */
 export class UserStore {
     private readonly store: Map<Request, User>;
 

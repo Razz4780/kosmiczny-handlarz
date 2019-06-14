@@ -6,7 +6,9 @@ import {NO_PLANET, Planet} from "./game/Planet.js";
 import {ItemCountedPriced} from "./game/ItemCountedPriced.js";
 
 let game: Game;
+// Currently open starship.
 let currentShip: Ship | null = null;
+// Currently open planet.
 let currentPlanet: Planet | null = null;
 
 function openPlanet(planet: Planet) {
