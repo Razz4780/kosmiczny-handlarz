@@ -6,6 +6,9 @@ import {GameNotFound} from "./GameNotFound";
 import {InvalidState} from "./InvalidState";
 import uuid from "uuid/v4";
 import {Validator} from "jsonschema";
+import {Planet} from "./Planet";
+import {Starship} from "./Starship";
+import {Game} from "./Game";
 
 const GAME_STATE_SCHEMA = {
     $schema: "http://json-schema.org/draft-07/schema#",
@@ -26,10 +29,7 @@ const GAME_STATE_SCHEMA = {
                 y: {type: "integer"},
                 available_items: {
                     type: "object",
-                    patternProperties: {
-                        "*": {$ref: "#/definitions/available_item"}
-                    },
-                    additionalProperties: false,
+                    additionalProperties: {$ref: "#/definitions/available_item"},
                 }
             },
             additionalProperties: false,
@@ -53,10 +53,11 @@ const GAME_STATE_SCHEMA = {
         },
         planets: {
             type: "object",
-            patternProperties: {
-                "*": {$ref: "#/definitions/planet"}
-            },
-            additionalProperties: false,
+            additionalProperties: {$ref: "#/definitions/planet"},
+        },
+        starships: {
+            type: "object",
+            additionalProperties: {$ref: "#/definitions/starship"},
         },
     },
     required: ["initial_credits", "game_duration", "items", "planets", "starships"],
@@ -75,7 +76,7 @@ export class GamesRouter {
         this.upload = multer();
         this.router = express.Router();
         const stateUpload = this.upload.single("state");
-        this.router.post("/", this.uploadGame(stateUpload));
+        this.router.post("/", (req, res) => this.uploadGame(stateUpload)(req, res));
         this.router.get("/", (req, res) => this.getGames(req, res));
         this.router.get("/top", (req, res) => this.getTopScores(req, res));
         this.router.get("/:gameId", (req, res) => this.getGameInitialState(req, res));
@@ -98,13 +99,13 @@ export class GamesRouter {
 
     private async getTopScores(req: Request, res: Response) {
         const queryResults = await this.db.query({
-            text: "SELECT name, best_player FROM st_game " +
+            text: "SELECT max_score, best_player, name FROM st_game " +
                 "WHERE max_score IS NOT NULL " +
                 "ORDER BY max_score DESC " +
                 "LIMIT 5",
         });
         const scores = queryResults.rows.map(row => {
-            return {name: row.name, player: row.best_player};
+            return {name: row.name, player: row.best_player, score: row.max_score};
         });
         res.json(scores);
     }
@@ -138,7 +139,7 @@ export class GamesRouter {
         });
     }
 
-    private uploadGame(upload: RequestHandler): RequestHandler {
+    private uploadGame(upload: RequestHandler) {
         return (req: Request, res: Response) => {
             const user = this.store.get(req);
             if (user === undefined) {
@@ -148,7 +149,9 @@ export class GamesRouter {
             upload(req, res, async (err) => {
                 const name = req.body.name;
                 if (err || name === undefined) {
-                    res.status(400).json({error: "Invalid data."});
+                    res.status(400).json(
+                        {error: "Invalid data - fields \"state\" and \"name\" are required."}
+                    );
                     return;
                 }
                 const stateString = req.file.buffer.toString();
@@ -161,7 +164,7 @@ export class GamesRouter {
                     }
                     throw err;
                 }
-                res.status(201);
+                res.status(201).end();
             });
         }
     }
@@ -186,8 +189,8 @@ export class GamesRouter {
         const gameId = req.params.gameId;
         await this.db.query({
             text: "UPDATE st_game " +
-                "SET max_score = CASE WHEN max_score < $1 THEN $1 ELSE max_score END, " +
-                "best_player = CASE WHEN max_score < $1 THEN $2 ELSE best_player END " +
+                "SET max_score = CASE WHEN max_score IS NULL OR max_score < $1 THEN $1 ELSE max_score END, " +
+                "best_player = CASE WHEN max_score IS NULL OR max_score < $1 THEN $2 ELSE best_player END " +
                 "WHERE uuid = $3",
             values: [score, username, gameId,],
         });
@@ -200,5 +203,39 @@ export class GamesRouter {
         if (!validationResult.valid) {
             throw new InvalidState("Invalid game state.");
         }
+        if (state.items.length > 20) {
+            throw new InvalidState("Too many items.");
+        }
+        const planetEntries = Object.entries(state.planets);
+        if (planetEntries.length > 20) {
+            throw new InvalidState("Too many planets.")
+        }
+        const shipEntries = Object.entries(state.starships);
+        if (shipEntries.length > 20) {
+            throw new InvalidState("Too many ships.");
+        }
+        const planets = planetEntries.map(pair => {
+            // @ts-ignore
+            const availableItems = Object.entries(pair[1].available_items).map(pair => {
+                // @ts-ignored
+                return [pair[0], pair[1].available, pair[1].buy_price, pair[1].sell_price];
+            });
+            // @ts-ignore
+            return new Planet(pair[0], pair[1].x, pair[1].y, availableItems);
+        });
+        planets.forEach(planet => planet.check(state.items));
+        const ships = shipEntries.map(pair => {
+            // @ts-ignore
+            return new Starship(pair[0], pair[1].position, pair[1].cargo_hold_size);
+        });
+        ships.forEach(ship => ship.check(planets));
+        const game = new Game(
+            state.game_duration,
+            state.initial_credits,
+            state.items,
+            ships,
+            planets
+        );
+        game.check();
     }
 }
