@@ -20,6 +20,7 @@ const GAME_STATE_SCHEMA = {
                 buy_price: {type: "integer"},
                 sell_price: {type: "integer"},
             },
+            required: ["available", "buy_price", "sell_price"],
             additionalProperties: false,
         },
         planet: {
@@ -32,6 +33,7 @@ const GAME_STATE_SCHEMA = {
                     additionalProperties: {$ref: "#/definitions/available_item"},
                 }
             },
+            required: ["x", "y", "available_items"],
             additionalProperties: false,
         },
         starship: {
@@ -40,6 +42,7 @@ const GAME_STATE_SCHEMA = {
                 position: {type: "string"},
                 cargo_hold_size: {type: "integer"},
             },
+            required: ["position", "cargo_hold_size"],
             additionalProperties: false,
         },
     },
@@ -177,7 +180,7 @@ export class GamesRouter {
 
     private async uploadScore(req: Request, res: Response) {
         const username = req.body.username;
-        if (username === undefined) {
+        if (!username) {
             res.status(400).json({error: "No username."});
             return;
         }

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Space Trader</title>
+    <link rel="stylesheet" type="text/css" href="./css/styles2.css">
+</head>
+<body>
+<header id="game-title">Space Trader</header>
+<section id="main-sections">
+    <section id="game-state">
+        <h2>Game state</h2>
+        <ul>
+            <li>Player: <span id="player-nick"></span></li>
+            <li>Credits: <span id="balance"></span></li>
+            <li>Remaining time: <span id="timer"></span></li>
+        </ul>
+    </section>
+
+    <section id="planets-section">
+        <h2>Planets</h2>
+        <ul id="planets-list">
+        </ul>
+    </section>
+
+    <section id="ships-section">
+        <h2>Ships</h2>
+        <ul id="ships-list">
+        </ul>
+    </section>
+</section>
+
+
+<div id="modal" class="modal">
+    <div id="modal-box" class="modal-box">
+        <button id="modal-exit">X</button>
+        <section id="modal-content"></section>
+    </div>
+</div>
+
+
+<script type="module">
+    import {initialize} from "./js/main.js";
+
+    let GAME;
+    let CONTROLLER;
+    const gameId = localStorage.getItem("gameId");
+    fetch(`/api/games/${gameId}`).then(res => {
+        if (res.status === 200) {
+            res.json().then(data => {
+                console.log(data);
+                GAME = initialize(data);
+                CONTROLLER = GAME.controller;
+                CONTROLLER.setGame(GAME);
+                document.getElementById("modal-exit").addEventListener("click", () => CONTROLLER.closeModal());
+                const planetsList = document.getElementById("planets-list");
+                Object.keys(data.planets).forEach(name => {
+                    const newElement = document.createElement("li");
+                    newElement.innerText = name;
+                    newElement.addEventListener("click", () => GAME.openPlanet(name));
+                    planetsList.appendChild(newElement);
+                });
+                const shipsList = document.getElementById("ships-list");
+                Object.entries(data.starships).forEach(pair => {
+                    const newElement = document.createElement("li");
+                    newElement.innerHTML = `${pair[0]} <span id="${pair[0]}-position">(${pair[1].position})</span>`;
+                    newElement.addEventListener("click", () => GAME.openShip(pair[0]));
+                    shipsList.appendChild(newElement);
+                });
+                GAME.start();
+            }).catch(() => alert("Communication error."));
+        } else {
+            alert("Communication error.");
+        }
+    }).catch(() => alert("Communication error."));
+</script>
+</body>
+</html>

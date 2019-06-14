@@ -2,9 +2,56 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Just a placeholder</title>
+    <title>Space Trader</title>
+    <link rel="stylesheet" type="text/css" href="./css/styles2.css">
 </head>
 <body>
-<script type="module" src="js/runner.js"></script>
+
+<header>Space Trader</header>
+
+<section class="main-view-section" id="auth-section">
+    <form action="#">
+        <p>
+            <label for="login-input">Username:</label>
+            <input type="text" id="login-input" required/>
+        </p>
+        <p>
+            <label for="password-input">Password:</label>
+            <input type="password" id="password-input" required/>
+        </p>
+        <p>
+            <button id="login-submit">Login</button>
+            <button id="register-submit">Register</button>
+        </p>
+    </form>
+</section>
+
+<section class="main-view-section">
+    <button id="open-game-modal">Play</button>
+    <h3>Top scores:</h3>
+    <ol id="top-scores-list"></ol>
+</section>
+
+
+<div id="modal" class="modal">
+    <div id="modal-box" class="modal-box">
+        <button id="modal-exit">X</button>
+        <section id="modal-content"></section>
+    </div>
+</div>
+
+<script type="module">
+    import {controller} from "./js/main.js";
+
+    const CONTROLLER = controller();
+    CONTROLLER.checkLoggedIn();
+    CONTROLLER.getTopScores();
+
+    document.getElementById("login-submit").addEventListener("click", () => CONTROLLER.login());
+    document.getElementById("register-submit").addEventListener("click", () => CONTROLLER.register());
+    document.getElementById("open-game-modal").addEventListener("click", () => CONTROLLER.openStartModal());
+    document.getElementById("modal-exit").addEventListener("click", () => CONTROLLER.closeModal());
+</script>
+
 </body>
 </html>

@@ -35,7 +35,7 @@ export class Auth {
     private async register(req: Request, res: Response) {
         const username = req.body.username;
         const password = req.body.password;
-        if (username === undefined || password === undefined) {
+        if (!username || !password) {
             res.status(400).json({error: "Invalid data."});
         } else {
             try {
@@ -54,14 +54,13 @@ export class Auth {
     private async login(req: Request, res: Response) {
         const username = req.body.username;
         const password = req.body.password;
-        if (username === undefined || password === undefined) {
+        if (!username || !password) {
             res.status(400).json({error: "Invalid data."});
         } else {
             try {
                 const user = await this.authenticate(username, password);
                 const token = Auth.createToken(user);
-                res.cookie("Authorization", token);
-                res.json({uuid: user.uuid, name: user.name});
+                res.json({uuid: user.uuid, name: user.name, token: token});
             } catch (err) {
                 if (err instanceof UserNotFound) {
                     res.status(401).end();
@@ -105,7 +104,7 @@ export class Auth {
     }
 
     public static createToken(user: User): string {
-        return jsonWebToken.sign({uuid: user.uuid}, Auth.secret, {
+        return jsonWebToken.sign({uuid: user.uuid, name: user.name}, Auth.secret, {
             algorithm: Auth.algorithm,
             expiresIn: Auth.expiration,
         });
