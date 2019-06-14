@@ -5,6 +5,9 @@ export class ItemCounted extends Item {
 
     constructor(name: string, count: number) {
         super(name);
+        if (count < 0) {
+            throw new Error("Negative count.")
+        }
         this.count = count;
     }
 
@@ -14,7 +17,7 @@ export class ItemCounted extends Item {
 
     public minusOne(): void {
         if (this.count < 1) {
-            throw new Error("Negative count");
+            throw new Error("Negative count.");
         }
         this.count -= 1;
     }

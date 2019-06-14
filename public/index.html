@@ -10,18 +10,30 @@
 <header>Space Trader</header>
 
 <section class="main-view-section" id="auth-section">
-    <form action="#">
+    <form id="register-form">
         <p>
-            <label for="login-input">Username:</label>
-            <input type="text" id="login-input" required/>
+            <label for="username-register">Username:</label>
+            <input type="text" id="username-register" required/>
         </p>
         <p>
-            <label for="password-input">Password:</label>
-            <input type="password" id="password-input" required/>
+            <label for="password-register">Password:</label>
+            <input type="password" id="password-register" required/>
         </p>
         <p>
-            <button id="login-submit">Login</button>
-            <button id="register-submit">Register</button>
+            <button type="submit">Register</button>
+        </p>
+    </form>
+    <form id="login-form">
+        <p>
+            <label for="username-login">Username:</label>
+            <input type="text" id="username-login" required/>
+        </p>
+        <p>
+            <label for="password-login">Password:</label>
+            <input type="password" id="password-login" required/>
+        </p>
+        <p>
+            <button type="submit">Login</button>
         </p>
     </form>
 </section>
@@ -32,7 +44,6 @@
     <ol id="top-scores-list"></ol>
 </section>
 
-
 <div id="modal" class="modal">
     <div id="modal-box" class="modal-box">
         <button id="modal-exit">X</button>
@@ -40,18 +51,7 @@
     </div>
 </div>
 
-<script type="module">
-    import {controller} from "./js/main.js";
-
-    const CONTROLLER = controller();
-    CONTROLLER.checkLoggedIn();
-    CONTROLLER.getTopScores();
-
-    document.getElementById("login-submit").addEventListener("click", () => CONTROLLER.login());
-    document.getElementById("register-submit").addEventListener("click", () => CONTROLLER.register());
-    document.getElementById("open-game-modal").addEventListener("click", () => CONTROLLER.openStartModal());
-    document.getElementById("modal-exit").addEventListener("click", () => CONTROLLER.closeModal());
-</script>
+<script type="module" src="js/index.js"></script>
 
 </body>
 </html>

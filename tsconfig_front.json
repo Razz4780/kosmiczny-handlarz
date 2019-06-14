@@ -3,7 +3,7 @@
     "target": "es5",
     "module": "es2015",
     "outDir": "./public/js",
-    "rootDir": "./src/front",
+    "rootDir": "./front",
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -15,10 +15,11 @@
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "exclude": [
     "node_modules",
-    "src/server"
+    "src"
   ]
 }

@@ -13,7 +13,7 @@
         <ul>
             <li>Player: <span id="player-nick"></span></li>
             <li>Credits: <span id="balance"></span></li>
-            <li>Remaining time: <span id="timer"></span></li>
+            <li>Remaining time: <span id="remaining-time"></span></li>
         </ul>
     </section>
 
@@ -38,41 +38,7 @@
     </div>
 </div>
 
+<script type="module" src="js/gameview.js"></script>
 
-<script type="module">
-    import {initialize} from "./js/main.js";
-
-    let GAME;
-    let CONTROLLER;
-    const gameId = localStorage.getItem("gameId");
-    fetch(`/api/games/${gameId}`).then(res => {
-        if (res.status === 200) {
-            res.json().then(data => {
-                console.log(data);
-                GAME = initialize(data);
-                CONTROLLER = GAME.controller;
-                CONTROLLER.setGame(GAME);
-                document.getElementById("modal-exit").addEventListener("click", () => CONTROLLER.closeModal());
-                const planetsList = document.getElementById("planets-list");
-                Object.keys(data.planets).forEach(name => {
-                    const newElement = document.createElement("li");
-                    newElement.innerText = name;
-                    newElement.addEventListener("click", () => GAME.openPlanet(name));
-                    planetsList.appendChild(newElement);
-                });
-                const shipsList = document.getElementById("ships-list");
-                Object.entries(data.starships).forEach(pair => {
-                    const newElement = document.createElement("li");
-                    newElement.innerHTML = `${pair[0]} <span id="${pair[0]}-position">(${pair[1].position})</span>`;
-                    newElement.addEventListener("click", () => GAME.openShip(pair[0]));
-                    shipsList.appendChild(newElement);
-                });
-                GAME.start();
-            }).catch(() => alert("Communication error."));
-        } else {
-            alert("Communication error.");
-        }
-    }).catch(() => alert("Communication error."));
-</script>
 </body>
 </html>

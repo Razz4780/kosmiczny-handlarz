@@ -149,15 +149,7 @@ export class Games {
 
     private async uploadScore(req: Request, res: Response) {
         const username = req.body.username;
-        if (!username) {
-            res.status(400).json({error: "No username."});
-            return;
-        }
         const score = req.body.score;
-        if (!Number.isInteger(score) || score < 0) {
-            res.status(400).json({error: "Score is not a valid integer"});
-            return;
-        }
         const gameId = req.params.gameId;
         await this.db.query({
             text: "UPDATE st_game " +

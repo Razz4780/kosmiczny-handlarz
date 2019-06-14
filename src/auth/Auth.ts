@@ -75,7 +75,7 @@ export class Auth {
             res.status(201).json(user.getPayload());
         } catch (err) {
             if (err instanceof UserExists) {
-                res.status(403).json({error: "User already exists."});
+                res.status(403).json({errors: ["User already exists."]});
             } else {
                 res.status(500).end();
             }
@@ -118,7 +118,7 @@ export class Auth {
                     const user = Auth.getUser(jwt);
                     this.store.set(req, user);
                 } catch (e) {
-                    res.status(401).json({error: "Invalid or expired token."})
+                    res.status(401).json({errors: ["Invalid or expired token."]})
                 }
             }
             next();

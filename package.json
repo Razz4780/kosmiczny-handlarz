@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Student project - single player game with Node.js.",
   "scripts": {
-    "tsc": "tsc",
+    "tsc": "tsc && tsc -p tsconfig_front.json",
     "serve": "node build/index.js",
     "all": "npm run tsc && npm run serve"
   },
