@@ -5,26 +5,57 @@ import {User} from "./User";
 import jsonWebToken from "jsonwebtoken";
 import {IPayload} from "./IPayload";
 import {UserNotFound} from "./UserNotFound";
-import {compare, hash} from "bcrypt";
+import {compare, hashSync} from "bcrypt";
 import uuid from "uuid/v4";
 import {UserExists} from "./UserExists";
 import express, {Router} from "express";
+import {RequestValidator} from "../validation/RequestValidator";
 
 export class Auth {
-    private readonly db: Database;
-    private readonly store: UserStore;
-    private readonly router: Router;
     private static readonly secret: string = process.env.SECRET || "secret";
     private static readonly expiration: number = 60 * 60 * 24 * 5;
     private static readonly algorithm: string = "HS256";
     private static readonly saltRounds: number = 10;
 
-    constructor(db: Database, store: UserStore) {
+    private readonly db: Database;
+    private readonly store: UserStore;
+    private readonly router: Router;
+
+    constructor(db: Database) {
         this.db = db;
-        this.store = store;
+        this.store = new UserStore();
         this.router = express.Router();
-        this.router.post("/register", (req, res) => this.register(req, res));
-        this.router.post("/login", (req, res) => this.login(req, res));
+
+        const credentialsMiddleware = new RequestValidator({
+            type: "object",
+            properties: {
+                username: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 30,
+                },
+                password: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 30,
+                },
+            },
+            additionalProperties: false,
+            required: ["username", "password"],
+        }).getMiddleware();
+
+        this.router.post(
+            "/register",
+            credentialsMiddleware,
+            (req, res) => this.register(req, res)
+        );
+
+        this.router.post(
+            "/login",
+            credentialsMiddleware,
+            (req, res) => this.login(req, res)
+        );
+
         this.router.get("/check", (req, res) => this.loginCheck(req, res));
     }
 
@@ -32,21 +63,21 @@ export class Auth {
         return this.router;
     }
 
+    public getStore(): UserStore {
+        return this.store;
+    }
+
     private async register(req: Request, res: Response) {
         const username = req.body.username;
         const password = req.body.password;
-        if (!username || !password) {
-            res.status(400).json({error: "Invalid data."});
-        } else {
-            try {
-                const user = await this.saveUser(username, password);
-                res.status(201).json({uuid: user.uuid, name: user.name});
-            } catch (err) {
-                if (err instanceof UserExists) {
-                    res.status(403).json({error: "User exists."});
-                } else {
-                    throw err;
-                }
+        try {
+            const user = await this.saveUser(username, password);
+            res.status(201).json(user.getPayload());
+        } catch (err) {
+            if (err instanceof UserExists) {
+                res.status(403).json({error: "User already exists."});
+            } else {
+                res.status(500).end();
             }
         }
     }
@@ -54,19 +85,15 @@ export class Auth {
     private async login(req: Request, res: Response) {
         const username = req.body.username;
         const password = req.body.password;
-        if (!username || !password) {
-            res.status(400).json({error: "Invalid data."});
-        } else {
-            try {
-                const user = await this.authenticate(username, password);
-                const token = Auth.createToken(user);
-                res.json({uuid: user.uuid, name: user.name, token: token});
-            } catch (err) {
-                if (err instanceof UserNotFound) {
-                    res.status(401).end();
-                } else {
-                    throw err;
-                }
+        try {
+            const user = await this.authenticate(username, password);
+            const token = Auth.createToken(user);
+            res.json({uuid: user.uuid, username: user.username, token: token});
+        } catch (err) {
+            if (err instanceof UserNotFound) {
+                res.status(401).end();
+            } else {
+                res.status(500).end();
             }
         }
     }
@@ -74,7 +101,7 @@ export class Auth {
     private async loginCheck(req: Request, res: Response) {
         const user = this.store.get(req);
         if (user !== undefined) {
-            res.json({uuid: user.uuid, name: user.name});
+            res.json({uuid: user.uuid, username: user.username});
         } else {
             res.status(401).end();
         }
@@ -82,16 +109,16 @@ export class Auth {
 
     public getMiddleware(): RequestHandler {
         return async (req: Request, res: Response, next: NextFunction) => {
+            res.once("finish", () => {
+                this.store.remove(req);
+            });
             const jwt = req.header("Authorization");
-            if (jwt !== undefined) {
+            if (jwt) {
                 try {
                     const user = Auth.getUser(jwt);
                     this.store.set(req, user);
                 } catch (e) {
-                    if (!(e instanceof jsonWebToken.JsonWebTokenError
-                        || e instanceof jsonWebToken.TokenExpiredError)) {
-                        throw e;
-                    }
+                    res.status(401).json({error: "Invalid or expired token."})
                 }
             }
             next();
@@ -100,11 +127,11 @@ export class Auth {
 
     private static getUser(jwt: string): User {
         const payload = jsonWebToken.verify(jwt, Auth.secret) as IPayload;
-        return new User(payload.name, payload.uuid);
+        return new User(payload.username, payload.uuid);
     }
 
     public static createToken(user: User): string {
-        return jsonWebToken.sign({uuid: user.uuid, name: user.name}, Auth.secret, {
+        return jsonWebToken.sign(user.getPayload(), Auth.secret, {
             algorithm: Auth.algorithm,
             expiresIn: Auth.expiration,
         });
@@ -124,14 +151,14 @@ export class Auth {
 
     public async saveUser(username: string, password: string): Promise<User> {
         const userId = uuid();
-        const passHash = await hash(password, Auth.saltRounds);
+        const passHash = hashSync(password, Auth.saltRounds);
         try {
             await this.db.query({
                 text: "INSERT into st_user (name, uuid, hash) VALUES($1, $2, $3)",
                 values: [username, userId, passHash],
             });
         } catch (err) {
-            if (err.detail.indexOf("already exists")) {
+            if (err.detail.indexOf("already exists") > -1) {
                 throw new UserExists();
             }
             throw err;

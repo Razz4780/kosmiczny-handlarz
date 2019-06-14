@@ -12,21 +12,25 @@ export class Database {
             port: port,
             connectionTimeoutMillis: 10000,
         });
-        this.pool.query({
+    }
+
+    public prepareTables(): Promise<QueryResult> {
+        return this.pool.query({
             text: "CREATE TABLE IF NOT EXISTS st_user (\n" +
                 "uuid UUID PRIMARY KEY,\n" +
                 "name VARCHAR UNIQUE NOT NULL,\n" +
                 "hash VARCHAR NOT NULL\n" +
                 ")"
-        });
-        this.pool.query({
-            text: "CREATE TABLE IF NOT EXISTS st_game (\n" +
-                "uuid UUID PRIMARY KEY,\n" +
-                "name VARCHAR NOT NULL,\n" +
-                "json VARCHAR NOT NULL,\n" +
-                "max_score INTEGER,\n" +
-                "best_player VARCHAR\n" +
-                ")"
+        }).then(() => {
+            return this.pool.query({
+                text: "CREATE TABLE IF NOT EXISTS st_game (\n" +
+                    "uuid UUID PRIMARY KEY,\n" +
+                    "name VARCHAR NOT NULL,\n" +
+                    "json VARCHAR NOT NULL,\n" +
+                    "max_score INTEGER,\n" +
+                    "best_player VARCHAR\n" +
+                    ")"
+            });
         });
     }
 
@@ -34,14 +38,8 @@ export class Database {
         return this.pool.query(queryConfig);
     }
 
-    public close(): void {
+    public close(): Promise<void> {
         console.log("Closing database connections...");
-        this.pool.end()
-            .then(() => {
-                console.log("Connections shut down.")
-            })
-            .catch(() => {
-                console.log("An error occurred during database connections shutdown.")
-            });
+        return this.pool.end();
     }
 }

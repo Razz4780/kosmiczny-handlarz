@@ -1,4 +1,4 @@
-import {Request, RequestHandler} from "express";
+import {Request} from "express";
 import {User} from "./User";
 
 export class UserStore {
@@ -16,12 +16,7 @@ export class UserStore {
         this.store.set(req, user);
     }
 
-    public getMiddleware(): RequestHandler {
-        return (req, res, next) => {
-            res.once("finish", () => {
-                this.store.delete(req);
-            });
-            next();
-        }
+    public remove(req: Request): void {
+        this.store.delete(req);
     }
 }

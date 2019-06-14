@@ -3,7 +3,7 @@
     "target": "es5",
     "module": "commonjs",
     "outDir": "./build",
-    "rootDir": "./src/server",
+    "rootDir": "./src",
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -19,6 +19,6 @@
   },
   "exclude": [
     "node_modules",
-    "src/front"
+    "front"
   ]
 }

@@ -317,7 +317,8 @@ export class HtmlController implements IHtmlController {
         }).catch(alertError);
     }
 
-    private createGame(nameInput: HTMLInputElement, fileInput: HTMLInputElement) {
+    private createGame(nameInput: HTMLInputElement, fileInput: HTMLInputElement, event: Event) {
+        event.preventDefault();
         const data = new FormData();
         data.append("name", nameInput.value);
         // @ts-ignore
@@ -358,12 +359,12 @@ export class HtmlController implements IHtmlController {
         const fileInput = document.createElement("input");
         fileInput.type = "file";
         fileInput.name = "state";
-        fileInput.placeholder = "Initial state description (JSON).";
         fileInput.required = true;
         form.appendChild(fileInput);
-        const submit = document.createElement("button");
-        submit.innerText = "Submit";
-        submit.addEventListener("click", () => this.createGame(nameInput, fileInput));
+        const submit = document.createElement("input");
+        submit.type = "submit";
+        submit.value = "Submit";
+        form.addEventListener("submit", (event) => this.createGame(nameInput, fileInput, event));
         form.appendChild(submit);
         section.appendChild(form);
     }

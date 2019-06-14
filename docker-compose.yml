@@ -1,0 +1,30 @@
+version: "3.3"
+
+networks:
+  main:
+    driver: bridge
+
+services:
+  db:
+    container_name: db
+    image: postgres:11
+    expose:
+      - 5432
+    networks:
+      - main
+    restart: on-failure
+
+  server:
+    build: .
+    container_name: server
+    environment:
+      - DBHOST=db
+    depends_on:
+      - db
+    networks:
+      - main
+    expose:
+      - 3000
+    ports:
+      - 3000:3000
+    restart: on-failure
